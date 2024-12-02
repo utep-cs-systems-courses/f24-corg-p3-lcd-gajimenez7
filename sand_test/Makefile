@@ -1,4 +1,4 @@
-all: libLcd.a libTimer.a test.elf
+all: test.elf
 
 CPU             = msp430g2553
 CFLAGS          = -mmcu=${CPU} -Os -I../h 
@@ -8,32 +8,15 @@ CC              = msp430-elf-gcc
 AS              = msp430-elf-as
 AR              = msp430-elf-ar
 
-libLcd.a: lcdutils.o lcddraw.o
-	$(AR) crs $@ $^
+test.c: libTimer.h lcdutils.h lcddraw.h
 
-lcddraw.o: lcddraw.c lcddraw.h lcdutils.h
-lcdutils.o: lcdutils.c lcdutils.h
+test.o: test.c libTimer.h lcdutils.h lcddraw.h
 
-libTimer.a: clocksTimer.o sr.o
-	$(AR) crs $@ $^
-
-install: install_lcd install_timer
-
-install_lcd: libLcd.a
-	mkdir -p ../h ../lib
-	mv $^ ../lib
-	cp *.h ../h
-
-install_timer: libTimer.a
-	mkdir -p ../h ../lib
-	mv $^ ../lib
-	cp *.h ../h
-
-clean:
-	rm -f libLcd.a *.o *.elf
-
-test.elf: test.o libLcd.a
+test.elf: test.o libTimer.h lcdutils.h lcddraw.h
 	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ -lTimer
 
 load: test.elf
 	msp430loader.sh $^
+
+clean:
+	rm -f libLcd.a *.o *.elf
