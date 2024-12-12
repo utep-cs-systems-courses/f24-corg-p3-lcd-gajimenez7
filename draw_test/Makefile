@@ -20,6 +20,14 @@ install: libLcd.a
 	mv $^ ../lib
 	cp *.h ../h
 
+switch.c: switch.h
+
+buzzer.c: buzzer.h
+
+switch.o: switch.c switch.h
+
+buzzer.o: buzzer.c buzzer.h
+
 test.elf: test.o libLcd.a
 	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ -lTimer
 
