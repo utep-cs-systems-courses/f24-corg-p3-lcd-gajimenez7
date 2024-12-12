@@ -20,7 +20,7 @@ u_char sand_matrix[(ROWS * COLS + 7)/ 8] = {0};
 
 void update_sand_matrix();
 void insert_particle(u_char x, u_char y);
-void draw_matrix();
+void draw_matrix(u_char i, u_char j);
 
 int main(){
   configureClocks();
@@ -28,7 +28,8 @@ int main(){
   enableWDTInterrupts();
 
   insert_particle(0, 15);
-  
+
+  clearScreen(COLOR_GREEN);
 
   or_sr(0x18);
 }
@@ -39,36 +40,31 @@ u_char particleWidth = 4, particleHeight = 4;
 
 // move particles by checking each index and updating backwards (down up)
 void update_sand_matrix(){
-  u_char i, j;
-  for(i = ROWS - 1; i > 0; i--){
-    for(j = 0; j < COLS; j++){
-      //clearScreen(COLOR_BLUE);
-      // check if current bit is particle
-      if(GET_BIT(sand_matrix, i, j)){
-	//clearScreen(COLOR_BLUE);
-	// ground check
-	if(!GET_BIT(sand_matrix, i + 1, j)){
-	  //clearScreen(COLOR_BLUE);
-	  // move particle down
-	  CLEAR_BIT(sand_matrix, i, j);
-	  SET_BIT(sand_matrix, i+10, j);
-	}
+  u_char i, x, y;
+  int total = ROWS * COLS;
+  for(i = total - 1; i >= 0; i--){
+    x = i / COLS;
+    y = i % COLS;
+    draw_matrix(x, y);
+    // check if current bit is particle
+    if(GET_BIT(sand_matrix, x, y)){
+      // ground check
+      if(!GET_BIT(sand_matrix, x + 1, y)){
+	// move particle down
+	CLEAR_BIT(sand_matrix, x, y);
+	SET_BIT(sand_matrix, x+1, y);
       }
-      //clearScreen(COLOR_BLUE);
     }
-    //clearScreen(COLOR_BLUE);
   }
-  //clearScreen(COLOR_BLUE);
 }
+
 	
-void draw_matrix(){
-  u_char i, j;
-  for(i = 0; i < ROWS; i++){
-    for(j = 0; j < COLS; j++){
-      if(GET_BIT(sand_matrix, i, j)){
-	fillRectangle(j * particleWidth, i * particleHeight, particleWidth, particleHeight, COLOR_RED);
-      }
-    }
+void draw_matrix(u_char i, u_char j){
+  if(GET_BIT(sand_matrix, i, j)){
+    fillRectangle(j * particleWidth, i * particleHeight, particleWidth, particleHeight, COLOR_RED);
+  }
+  else{
+    fillRectangle(j * particleWidth, i * particleHeight, particleWidth, particleHeight, COLOR_GREEN);
   }
 }
 
@@ -84,8 +80,9 @@ void
 __interrupt_vec(WDT_VECTOR) WDT(){
   count++;
   if(count >= 2){
-    clearScreen(COLOR_GREEN);
-    draw_matrix();
+    // clearScreen(COLOR_GREEN);
+    // update_sand_matrix();
+    // draw_matrix();
     update_sand_matrix();
   }
   if(count >= 3){
