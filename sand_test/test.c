@@ -27,9 +27,9 @@ int main(){
   lcd_init();
   enableWDTInterrupts();
 
-  insert_particle(40, 30);
+  insert_particle(0, 15);
   
-  clearScreen(COLOR_GREEN);
+
   or_sr(0x18);
 }
 
@@ -40,19 +40,25 @@ u_char particleWidth = 4, particleHeight = 4;
 // move particles by checking each index and updating backwards (down up)
 void update_sand_matrix(){
   u_char i, j;
-  for(i = ROWS; i > 0; i--){
-    for(j = COLS; j > 0; j--){
+  for(i = ROWS - 1; i > 0; i--){
+    for(j = 0; j < COLS; j++){
+      //clearScreen(COLOR_BLUE);
       // check if current bit is particle
       if(GET_BIT(sand_matrix, i, j)){
-	  // ground check
-	  if(i >= 0){
-	    // move particle down
-	    CLEAR_BIT(sand_matrix, i, j);
-	    SET_BIT(sand_matrix, i+1, j);
-	  }
+	//clearScreen(COLOR_BLUE);
+	// ground check
+	if(!GET_BIT(sand_matrix, i + 1, j)){
+	  //clearScreen(COLOR_BLUE);
+	  // move particle down
+	  CLEAR_BIT(sand_matrix, i, j);
+	  SET_BIT(sand_matrix, i+10, j);
 	}
+      }
+      //clearScreen(COLOR_BLUE);
     }
+    //clearScreen(COLOR_BLUE);
   }
+  //clearScreen(COLOR_BLUE);
 }
 	
 void draw_matrix(){
@@ -60,7 +66,7 @@ void draw_matrix(){
   for(i = 0; i < ROWS; i++){
     for(j = 0; j < COLS; j++){
       if(GET_BIT(sand_matrix, i, j)){
-	fillRectangle(i * 20, j * 15, particleWidth, particleHeight, COLOR_RED);
+	fillRectangle(j * particleWidth, i * particleHeight, particleWidth, particleHeight, COLOR_RED);
       }
     }
   }
@@ -78,8 +84,11 @@ void
 __interrupt_vec(WDT_VECTOR) WDT(){
   count++;
   if(count >= 2){
+    clearScreen(COLOR_GREEN);
     draw_matrix();
     update_sand_matrix();
+  }
+  if(count >= 3){
     count = 0;
   }
 }
