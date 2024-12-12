@@ -6,9 +6,17 @@
 #define ROWS 40
 #define COLS 30
 
-u_char sand_matrix[ROWS][COLS] = {0};
+#define SET_BIT(array, row, col) \
+  (array[(row * COLS + col) / 8] |= (1 << ((row * COLS + col) % 8)))
 
-u_char i, j;
+#define CLEAR_BIT(array, row, col) \
+  (array[(row * COLS + col) / 8] &= ~(1 << ((row * COLS + col) % 8)))
+
+#define GET_BIT(array, row, col) \
+  ((array[(row * COLS + col) / 8] >> ((row * COLS + col) % 8)) & 1)
+
+// create a bitfield to hold particle positions
+u_char sand_matrix[(ROWS * COLS + 7)/ 8] = {0};
 
 void update_sand_matrix();
 void insert_particle(u_char x, u_char y);
@@ -19,7 +27,7 @@ int main(){
   lcd_init();
   enableWDTInterrupts();
 
-  insert_particle(0, 15);
+  insert_particle(40, 30);
   
   clearScreen(COLOR_GREEN);
   or_sr(0x18);
@@ -31,50 +39,47 @@ u_char particleWidth = 4, particleHeight = 4;
 
 // move particles by checking each index and updating backwards (down up)
 void update_sand_matrix(){
-  for(i = ROWS; i > 0; i++){
-    for(j = COLS; j > 0; j++){
-      //check if we are in a particle element
-      if(sand_matrix[i][j] == 1){
-	// ground level check
-	if(i >= 1){
-	  if(sand_matrix[i+1][j] == 0){
-	    sand_matrix[i][j] = 0;
-	    sand_matrix[i+1][j] = 1;
+  u_char i, j;
+  for(i = ROWS; i > 0; i--){
+    for(j = COLS; j > 0; j--){
+      // check if current bit is particle
+      if(GET_BIT(sand_matrix, i, j)){
+	  // ground check
+	  if(i >= 0){
+	    // move particle down
+	    CLEAR_BIT(sand_matrix, i, j);
+	    SET_BIT(sand_matrix, i+1, j);
 	  }
 	}
-      }
     }
   }
-  i = 0, j = 0;
 }
-
+	
 void draw_matrix(){
+  u_char i, j;
   for(i = 0; i < ROWS; i++){
     for(j = 0; j < COLS; j++){
-      if(sand_matrix[i][j] == 1){
-	fillRectangle(i * 40, j * 30, particleWidth, particleHeight, COLOR_RED);
+      if(GET_BIT(sand_matrix, i, j)){
+	fillRectangle(i * 20, j * 15, particleWidth, particleHeight, COLOR_RED);
       }
     }
   }
-  i = 0, j = 0;
 }
 
 void insert_particle(u_char x, u_char y){
-  if(sand_matrix[x][y] == 0){
-    sand_matrix[x][y] = 1;
+  if(!GET_BIT(sand_matrix, x, y)){
+    SET_BIT(sand_matrix, x, y);
   }
 }
-
+ 
 u_char count = 0;
 
 void
 __interrupt_vec(WDT_VECTOR) WDT(){
   count++;
-  if(count >= 0){
+  if(count >= 2){
     draw_matrix();
     update_sand_matrix();
-  }
-  if(count >= 2){
     count = 0;
   }
 }
